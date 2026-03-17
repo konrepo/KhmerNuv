@@ -9,6 +9,8 @@ const axiosClient = require("./utils/fetch");
 const cheerio = require("cheerio");
 const { normalizePoster, mapMetas, uniqById } = require("./utils/helpers");
 
+const EP_CACHE = new Map();
+
 const TYPE = "series";
 
 const ENGINES = {
@@ -221,8 +223,14 @@ builder.defineMetaHandler(async ({ id }) => {
     const { engine: siteEngine } = ctx;
     const seriesUrl = decodeURIComponent(encodedUrl);
 
-    const episodes = await siteEngine.getEpisodes(prefix, seriesUrl);
+    let episodes = await siteEngine.getEpisodes(prefix, seriesUrl);
     if (!episodes.length) return { meta: null };
+
+    // normalize order
+    episodes = episodes.reverse();
+
+    // cache normalized episodes
+    EP_CACHE.set(id, episodes);
 
     const first = episodes[0];
 
@@ -230,11 +238,11 @@ builder.defineMetaHandler(async ({ id }) => {
       meta: {
         id,
         type: TYPE,
-        name: first.title,
+        name: first.title.replace(/episode\s*\d+/i, "").trim(),
         poster: first.thumbnail,
         background: first.thumbnail,
         videos: episodes.map((ep, index) => ({
-          id: `${id}:${index + 1}`,  
+          id: `${id}:${index + 1}`,
           title: ep.title || `Episode ${index + 1}`,
           season: 1,
           episode: index + 1,
@@ -243,6 +251,7 @@ builder.defineMetaHandler(async ({ id }) => {
       },
     };
   } catch (err) {
+    console.error("meta error:", err);
     return { meta: null };
   }
 });
@@ -254,7 +263,8 @@ builder.defineStreamHandler(async ({ id }) => {
   try {
     const parts = id.split(":");
     if (parts.length < 2) return { streams: [] };
-	  
+
+    // Extract episode safely
     const episode = parts.pop();
     const metaId = parts.join(":");
 
@@ -263,6 +273,7 @@ builder.defineStreamHandler(async ({ id }) => {
       return { streams: [] };
     }
 
+    // Extract prefix + URL
     const firstColon = metaId.indexOf(":");
     if (firstColon === -1) return { streams: [] };
 
@@ -273,15 +284,36 @@ builder.defineStreamHandler(async ({ id }) => {
     if (!ctx) return { streams: [] };
 
     const { engine: siteEngine } = ctx;
-
     const seriesUrl = decodeURIComponent(encodedUrl);
 
-    const stream = await siteEngine.getStream(prefix, seriesUrl, epNum);
+    // =========================
+    // USE CACHE FIRST
+    // =========================
+    let episodes = EP_CACHE.get(metaId);
+
+    if (!episodes) {
+      episodes = await siteEngine.getEpisodes(prefix, seriesUrl);
+      if (!episodes.length) return { streams: [] };
+
+      // normalize
+      if (episodes.length > 1 && episodes[0].episode > episodes[episodes.length - 1].episode) {
+		episodes = episodes.reverse();
+	  }
+
+      EP_CACHE.set(metaId, episodes);
+    }
+
+    const ep = episodes[epNum - 1];
+    if (!ep) return { streams: [] };
+
+    // Use episode URL directly
+    const stream = await siteEngine.getStream(prefix, ep.url, epNum);
     if (!stream) return { streams: [] };
 
     return { streams: [stream] };
 
-  } catch {
+  } catch (err) {
+    console.error("stream error:", err);
     return { streams: [] };
   }
 });
