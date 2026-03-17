@@ -219,7 +219,6 @@ builder.defineMetaHandler(async ({ id }) => {
     if (!ctx) return { meta: null };
 
     const { engine: siteEngine } = ctx;
-
     const seriesUrl = decodeURIComponent(encodedUrl);
 
     const episodes = await siteEngine.getEpisodes(prefix, seriesUrl);
@@ -234,10 +233,13 @@ builder.defineMetaHandler(async ({ id }) => {
         name: first.title,
         poster: first.thumbnail,
         background: first.thumbnail,
-        videos: episodes.map((ep) => ({
-		  ...ep,
-		  id: `k:${ep.id}`
-		})),  
+        videos: episodes.map((ep, index) => ({
+          id: `${id}:${index + 1}`,  
+          title: ep.title || `Episode ${index + 1}`,
+          season: 1,
+          episode: index + 1,
+          thumbnail: ep.thumbnail
+        })),
       },
     };
   } catch (err) {
@@ -250,33 +252,27 @@ builder.defineMetaHandler(async ({ id }) => {
 ========================= */
 builder.defineStreamHandler(async ({ id }) => {
   try {
-    if (id.startsWith("k:")) {
-      id = id.slice(2);
-    }  
-	  
     const parts = id.split(":");
-
-    let prefix, encodedUrl, episode;
-
-    if (parts.length === 3) {
-      [prefix, encodedUrl, episode] = parts;
-    } else if (parts.length === 4) {
-      prefix = parts[0];
-      encodedUrl = parts[1];
-      episode = parts[3];
-    } else {
-      return { streams: [] };
-    }
-
-    const ctx = getSiteEngine(prefix);
-    if (!ctx) return { streams: [] };
-
-    const { engine: siteEngine } = ctx;
+    if (parts.length < 2) return { streams: [] };
+	  
+    const episode = parts.pop();
+    const metaId = parts.join(":");
 
     const epNum = Number(episode);
     if (!Number.isInteger(epNum) || epNum <= 0) {
       return { streams: [] };
     }
+
+    const firstColon = metaId.indexOf(":");
+    if (firstColon === -1) return { streams: [] };
+
+    const prefix = metaId.slice(0, firstColon);
+    const encodedUrl = metaId.slice(firstColon + 1);
+
+    const ctx = getSiteEngine(prefix);
+    if (!ctx) return { streams: [] };
+
+    const { engine: siteEngine } = ctx;
 
     const seriesUrl = decodeURIComponent(encodedUrl);
 
