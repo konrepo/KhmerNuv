@@ -1,5 +1,5 @@
 const TYPE = "series";
-const EXTRA = ["search", "skip"];
+const EXTRA = ["search"];
 
 const sites = [
   { id: "vip", name: "Phumikhmer" },
@@ -23,7 +23,8 @@ module.exports = {
     type: TYPE,
     id: site.id,
     name: site.name,
-    extraSupported: EXTRA
+    extraSupported: EXTRA,
+    idPrefixes: [site.id]
   })),
 
   behaviorHints: {
