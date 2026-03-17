@@ -209,24 +209,38 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 ========================= */
 builder.defineMetaHandler(async ({ id }) => {
   try {
+    const firstColon = id.indexOf(":");
+    if (firstColon === -1) return { meta: null };
+
+    const prefix = id.slice(0, firstColon);
+    const encodedUrl = id.slice(firstColon + 1);
+
+    const ctx = getSiteEngine(prefix);
+    if (!ctx) return { meta: null };
+
+    const { engine: siteEngine } = ctx;
+
+    const seriesUrl = decodeURIComponent(encodedUrl);
+
+    const episodes = await siteEngine.getEpisodes(prefix, seriesUrl);
+    if (!episodes.length) return { meta: null };
+
+    const first = episodes[0];
+
     return {
       meta: {
         id,
         type: TYPE,
-        name: "KhmerDub",
-        poster: "first.thumbnail",
-        background: "first.thumbnail",
-        videos: [
-          {
-            id: `${id}:1`,
-            title: "Episode 1",
-            season: 1,
-            episode: 1
-          }
-        ]
-      }
+        name: first.title,
+        poster: first.thumbnail,
+        background: first.thumbnail,
+        videos: episodes.map((ep) => ({
+		  ...ep,
+		  id: `khmerdub:${ep.id}`
+		})),  
+      },
     };
-  } catch {
+  } catch (err) {
     return { meta: null };
   }
 });
