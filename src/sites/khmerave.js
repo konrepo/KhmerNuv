@@ -113,7 +113,7 @@ async function getEpisodes(prefix, seriesUrl) {
       thumbnail: poster,
       released: new Date().toISOString(),
       behaviorHints: {
-        bingeGroup: `${prefix}:${encodeURIComponent(seriesUrl)}`
+        group: `${prefix}:${encodeURIComponent(seriesUrl)}`
       }
     }));
   } catch (err) {
@@ -284,7 +284,7 @@ async function getStream(prefix, seriesUrl, episode) {
         title: `Episode ${String(episode).padStart(2, "0")}`,
         url: direct,
         behaviorHints: {
-          bingeGroup: `${prefix}:${encodeURIComponent(seriesUrl)}`,
+          group: `${prefix}:${encodeURIComponent(seriesUrl)}`,
           notWebReady: true,
           proxyHeaders: {
             request: { Referer: "https://ok.ru/", "User-Agent": UA_MOB },
