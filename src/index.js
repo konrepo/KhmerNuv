@@ -236,7 +236,7 @@ builder.defineMetaHandler(async ({ id }) => {
         background: first.thumbnail,
         videos: episodes.map((ep) => ({
 		  ...ep,
-		  id: `khmerdub:${ep.id}`
+		  id: `k:${ep.id}`
 		})),  
       },
     };
@@ -250,8 +250,8 @@ builder.defineMetaHandler(async ({ id }) => {
 ========================= */
 builder.defineStreamHandler(async ({ id }) => {
   try {
-    if (id.startsWith("khmerdub:")) {
-      id = id.replace("khmerdub:", "");
+    if (id.startsWith("k:")) {
+      id = id.slice(2);
     }  
 	  
     const parts = id.split(":");
