@@ -23,8 +23,7 @@ module.exports = {
     type: TYPE,
     id: site.id,
     name: site.name,
-    extraSupported: EXTRA,
-    idPrefixes: [site.id]
+    extraSupported: EXTRA
   })),
 
   behaviorHints: {
