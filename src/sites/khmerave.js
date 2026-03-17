@@ -112,6 +112,9 @@ async function getEpisodes(prefix, seriesUrl) {
       episode: e.epNumber,
       thumbnail: poster,
       released: new Date().toISOString(),
+      behaviorHints: {
+        bingeGroup: `${prefix}:${encodeURIComponent(seriesUrl)}`
+      }
     }));
   } catch (err) {
     console.error("khmerave meta error:", err.message);
@@ -281,6 +284,7 @@ async function getStream(prefix, seriesUrl, episode) {
         title: `Episode ${String(episode).padStart(2, "0")}`,
         url: direct,
         behaviorHints: {
+          bingeGroup: `${prefix}:${encodeURIComponent(seriesUrl)}`,
           notWebReady: true,
           proxyHeaders: {
             request: { Referer: "https://ok.ru/", "User-Agent": UA_MOB },
