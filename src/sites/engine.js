@@ -6,6 +6,13 @@ const { URL_TO_POSTID, POST_INFO, BLOG_IDS } = require("../utils/cache");
 const FILE_REGEX =
   /file\s*:\s*["'](https?:\/\/[^"']+\.mp4(?:\?[^"']+)?)["']/gi;  
 
+function withTimeout(promise, ms = 6000) {
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(null), ms))
+  ]);
+}
+
 /* =========================
    GET POST ID
 ========================= */
@@ -114,13 +121,17 @@ async function getStreamDetail(postId) {
   const cached = POST_INFO.get(postId);
   if (cached?.detail) return cached.detail;
 
-  const results = await Promise.all(
+  const results = await Promise.allSettled(
     Object.values(BLOG_IDS).map(blogId =>
       fetchFromBlog(blogId, postId)
     )
   );
 
-  const detail = results.find(Boolean);
+  const detail = results
+    .filter(r => r.status === "fulfilled" && r.value)
+    .map(r => r.value)
+    .find(Boolean);
+
   if (!detail) {
     return null;
   }
@@ -270,7 +281,8 @@ function buildStream(url, episode) {
    STREAM
 ========================= */
 async function getStream(prefix, seriesUrl, episode) {
-  const postId = await getPostId(seriesUrl);
+  const postId = await withTimeout(getPostId(seriesUrl));
+  
   // Sunday fallback streaming
   if (prefix === "sunday" && !postId) {
 
@@ -290,32 +302,22 @@ async function getStream(prefix, seriesUrl, episode) {
 
   if (!postId) return null;
 
-  const detail = await getStreamDetail(postId);
-  if (!detail) {
-	return null;
-  }
+  const detail = await withTimeout(getStreamDetail(postId));
+  if (!detail) return null;
 
   let url = detail.urls[episode - 1];
-  if (!url) {
-	return null;
-  }
+  if (!url) return null;
 
-  // Resolve player.php first
   if (url.includes("player.php")) {
-	  const resolved = await resolvePlayerUrl(url);
-	  if (!resolved) {
-		return null;
-	  }
-	  url = resolved;
+    const resolved = await withTimeout(resolvePlayerUrl(url));
+    if (!resolved) return null;
+    url = resolved;
   }
-
-  // Resolve OK embed page
+	
   if (url.includes("ok.ru/videoembed/")) {
-	  const resolved = await resolveOkEmbed(url);
-	  if (!resolved) {
-		return null;
-	  }
-	  url = resolved;
+    const resolved = await withTimeout(resolveOkEmbed(url));
+    if (!resolved) return null;
+    url = resolved;
   }
 
   return buildStream(url, episode);
