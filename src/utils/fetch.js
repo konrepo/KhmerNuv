@@ -4,7 +4,7 @@ const USER_AGENT =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36";
 
 const axiosClient = axios.create({
-  timeout: 7000, // 🔥 reduced from 20000 → 7000
+  timeout: 7000,
   maxRedirects: 5,
   headers: {
     "User-Agent": USER_AGENT,
