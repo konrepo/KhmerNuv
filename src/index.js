@@ -250,6 +250,10 @@ builder.defineMetaHandler(async ({ id }) => {
 ========================= */
 builder.defineStreamHandler(async ({ id }) => {
   try {
+    if (id.startsWith("khmerdub:")) {
+      id = id.replace("khmerdub:", "");
+    }  
+	  
     const parts = id.split(":");
 
     let prefix, encodedUrl, episode;
