@@ -212,37 +212,25 @@ builder.defineMetaHandler(async ({ id }) => {
     const parts = id.split(":");
     if (parts.length < 2) return { meta: null };
 
-    const prefix = parts[0];
-    const encodedUrl = parts[1];
-
-    const ctx = getSiteEngine(prefix);
-    if (!ctx) return { meta: null };
-
-    const { engine: siteEngine } = ctx;
-
-    const seriesUrl = decodeURIComponent(encodedUrl);
-
-    const episodes = await withTimeout(
-     siteEngine.getEpisodes(prefix, seriesUrl),
-     6000
-    );
-
-    if (!episodes || !episodes.length) return { meta: null };
-
-    const first = episodes[0];
-
     return {
       meta: {
         id,
         type: TYPE,
-        name: first.title,
-        poster: first.thumbnail,
-        background: first.thumbnail,
+        name: "KhmerDub",
+        poster: "https://avatars.githubusercontent.com/u/32822347?v=4",
+        background: "https://avatars.githubusercontent.com/u/32822347?v=4",
         releaseInfo: "HD",
-        videos: episodes,
-      },
+        videos: [
+          {
+            id: `${id}:1`,
+            title: "Episode 1",
+            season: 1,
+            episode: 1
+          }
+        ]
+      }
     };
-  } catch (err) {
+  } catch {
     return { meta: null };
   }
 });
