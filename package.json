@@ -1,7 +1,7 @@
 {
-  "name": "khmerdub-test",
-  "version": "1.2.0-test",
-  "description": "Stream Experimental Build | Dev: TheDevilz.",
+  "name": "khmerdub",
+  "version": "1.0.0",
+  "description": "Stream Asian dramas dubbed in Khmer (Nuvio) | Dev: TheDevilz.",
   "main": "src/index.js",
   "type": "commonjs",
   "engines": {
