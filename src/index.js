@@ -209,9 +209,6 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 ========================= */
 builder.defineMetaHandler(async ({ id }) => {
   try {
-    const parts = id.split(":");
-    if (parts.length < 2) return { meta: null };
-
     return {
       meta: {
         id,
@@ -219,7 +216,6 @@ builder.defineMetaHandler(async ({ id }) => {
         name: "KhmerDub",
         poster: "https://avatars.githubusercontent.com/u/32822347?v=4",
         background: "https://avatars.githubusercontent.com/u/32822347?v=4",
-        releaseInfo: "HD",
         videos: [
           {
             id: `${id}:1`,
