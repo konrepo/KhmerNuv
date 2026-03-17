@@ -209,11 +209,11 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 ========================= */
 builder.defineMetaHandler(async ({ id }) => {
   try {
-    const parts = id.split(":");
-    if (parts.length < 3) return { meta: null };
+    const firstColon = id.indexOf(":");
+    if (firstColon === -1) return { meta: null };
 
-    const prefix = parts[1];
-    const encodedUrl = parts[2];
+    const prefix = id.slice(0, firstColon);
+    const encodedUrl = id.slice(firstColon + 1);
 
     const ctx = getSiteEngine(prefix);
     if (!ctx) return { meta: null };

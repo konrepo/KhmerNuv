@@ -1,5 +1,5 @@
 const TYPE = "series";
-const EXTRA = ["search"];
+const EXTRA = ["search", "skip"];
 
 const sites = [
   { id: "vip", name: "Phumikhmer" },
