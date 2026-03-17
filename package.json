@@ -1,0 +1,23 @@
+{
+  "name": "khmerdub-test",
+  "version": "1.2.0-test",
+  "description": "Stream Experimental Build | Dev: TheDevilz.",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node src/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/konrepo/vip.git"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.13.5",
+    "cheerio": "^1.2.0",
+    "stremio-addon-sdk": "^1.6.10"
+  }
+}
