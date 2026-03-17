@@ -209,11 +209,11 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 ========================= */
 builder.defineMetaHandler(async ({ id }) => {
   try {
-    const firstColon = id.indexOf(":");
-    if (firstColon === -1) return { meta: null };
+    const parts = id.split(":");
+    if (parts.length < 2) return { meta: null };
 
-    const prefix = id.slice(0, firstColon);
-    const encodedUrl = id.slice(firstColon + 1);
+    const prefix = parts[0];
+    const encodedUrl = parts[1];
 
     const ctx = getSiteEngine(prefix);
     if (!ctx) return { meta: null };
@@ -222,8 +222,12 @@ builder.defineMetaHandler(async ({ id }) => {
 
     const seriesUrl = decodeURIComponent(encodedUrl);
 
-    const episodes = await siteEngine.getEpisodes(prefix, seriesUrl);
-    if (!episodes.length) return { meta: null };
+    const episodes = await withTimeout(
+     siteEngine.getEpisodes(prefix, seriesUrl),
+     6000
+    );
+
+    if (!episodes || !episodes.length) return { meta: null };
 
     const first = episodes[0];
 
@@ -234,6 +238,7 @@ builder.defineMetaHandler(async ({ id }) => {
         name: first.title,
         poster: first.thumbnail,
         background: first.thumbnail,
+        releaseInfo: "HD",
         videos: episodes,
       },
     };
