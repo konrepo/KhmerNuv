@@ -214,8 +214,8 @@ builder.defineMetaHandler(async ({ id }) => {
         id,
         type: TYPE,
         name: "KhmerDub",
-        poster: "https://avatars.githubusercontent.com/u/32822347?v=4",
-        background: "https://avatars.githubusercontent.com/u/32822347?v=4",
+        poster: "first.thumbnail",
+        background: "first.thumbnail",
         videos: [
           {
             id: `${id}:1`,
