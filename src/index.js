@@ -349,7 +349,7 @@ builder.defineStreamHandler(async ({ id }) => {
     }
 
     // Use episode URL directly
-    const stream = await siteEngine.getStream(prefix, ep.url, epNum);
+    const stream = await siteEngine.getStream(prefix, ep.url, ep.episode);
     if (!stream) return { streams: [] };
 
     return { streams: [stream] };
