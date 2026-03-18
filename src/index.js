@@ -10,7 +10,7 @@ const cheerio = require("cheerio");
 const { normalizePoster, mapMetas, uniqById } = require("./utils/helpers");
 
 const { makeMetaId } = require("./utils/hash");
-const { URL_CACHE, EP_CACHE } = require("./utils/cache");
+const { URL_CACHE, EP_CACHE, CATALOG_CACHE, META_CACHE } = require("./utils/cache");
 
 function applyMetaId(items, prefix) {
   return items.map(item => {
@@ -53,7 +53,11 @@ const builder = new addonBuilder(manifest);
 ========================= */
 builder.defineCatalogHandler(async ({ id, extra }) => {
   try {
-    const ctx = getSiteEngine(id);
+	const cacheKey = `catalog:${id}:${JSON.stringify(extra || {})}`;
+    const cached = CATALOG_CACHE.get(cacheKey);
+    if (cached) return cached;  
+	
+	const ctx = getSiteEngine(id);
     if (!ctx) return { metas: [] };
 
     const { site, engine: siteEngine } = ctx;
@@ -70,13 +74,15 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 
       const fixed = applyMetaId(items, id);
 
-      return { metas: mapMetas(fixed, TYPE) };
+      const result = { metas: mapMetas(fixed, TYPE) };
+      CATALOG_CACHE.set(cacheKey, result);
+      return result;
     }
 
     // KhmerAve / Merlkon: paging
     if (id === "khmerave" || id === "merlkon") {
       const WEBSITE_PAGE_SIZE = site.pageSize || 18;
-      const PAGES_PER_BATCH = 6;
+      const PAGES_PER_BATCH = 2;
       const SKIP_STEP = 300;
 
       const skip = Number(extra?.skip || 0);
@@ -105,13 +111,15 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 
       const fixed = applyMetaId(uniq, id);
 
-      return {
-        metas: mapMetas(
-          fixed.slice(0, WEBSITE_PAGE_SIZE * PAGES_PER_BATCH),
-          TYPE
-        ),
-        cacheMaxAge: 3600
-      };
+	  const result = {
+	     metas: mapMetas(
+		   fixed.slice(0, WEBSITE_PAGE_SIZE * PAGES_PER_BATCH),
+		   TYPE
+	     ),
+	     cacheMaxAge: 3600
+	  };
+	  CATALOG_CACHE.set(cacheKey, result);
+	  return result;
     }
 	
     // SundayDrama (Blogger): search + paging
@@ -123,7 +131,7 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
         : `${base}/?max-results=20&m=1`;
 
       const WEBSITE_PAGE_SIZE = 20;
-      const PAGES_PER_BATCH = 3;
+      const PAGES_PER_BATCH = 1;
 
       const skip = Number(extra?.skip || 0);
       const targetPage = Math.floor(skip / WEBSITE_PAGE_SIZE) + 1;
@@ -193,7 +201,9 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
       const uniq = uniqById(allItems);
       const fixed = applyMetaId(uniq, id);
 
-      return { metas: mapMetas(fixed, TYPE) };
+      const result = { metas: mapMetas(fixed, TYPE) };
+      CATALOG_CACHE.set(cacheKey, result);
+      return result;
     }
 
     // VIP / iDrama: normal paging
@@ -213,7 +223,9 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 
     const fixed = applyMetaId(items, id);
 
-    return { metas: mapMetas(fixed, TYPE) };
+    const result = { metas: mapMetas(fixed, TYPE) };
+    CATALOG_CACHE.set(cacheKey, result);
+    return result;
 
   } catch (e) {
     console.error("catalog error:", e);
@@ -226,6 +238,9 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 ========================= */
 builder.defineMetaHandler(async ({ id }) => {
   try {
+	const cachedMeta = META_CACHE.get(id);
+	if (cachedMeta) return cachedMeta;
+  
     const prefix = id.split(":")[0];
 
     const ctx = getSiteEngine(prefix);
@@ -254,14 +269,14 @@ builder.defineMetaHandler(async ({ id }) => {
 
     const first = episodes[0];
 
-    return {
+    const result = {
       meta: {
         id,
         type: TYPE,
         name: (first.title || "KhmerDub").replace(/episode\s*\d+/i, "").trim(),
         poster: first.thumbnail,
         background: first.thumbnail,
-        videos: episodes.map((ep, index) => ({
+        videos: episodes.map((ep) => ({
           id: `${id}:${ep.episode}`,
           title: ep.title || `Episode ${ep.episode}`,
 		  description: `Episode ${ep.episode}`,
@@ -271,9 +286,11 @@ builder.defineMetaHandler(async ({ id }) => {
         })),
       },
     };
+	META_CACHE.set(id, result);
+	return result;
   } catch (err) {
-    console.error("meta error:", err);
-    return { meta: null };
+      console.error("meta error:", err);
+      return { meta: null };
   }
 });
 

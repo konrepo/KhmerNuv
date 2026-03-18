@@ -2,6 +2,8 @@ const URL_TO_POSTID = new Map();
 const POST_INFO = new Map();
 const URL_CACHE = new Map();
 const EP_CACHE = new Map();
+const CATALOG_CACHE = new Map();
+const META_CACHE = new Map();
 
 const BLOG_IDS = Object.freeze({
   TVSABAY: "8016412028548971199",
@@ -24,5 +26,7 @@ module.exports = {
   BLOG_IDS,
   getMaxEpFromSeriesPage,
   URL_CACHE,
-  EP_CACHE
+  EP_CACHE,
+  CATALOG_CACHE,
+  META_CACHE
 };
