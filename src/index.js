@@ -262,11 +262,11 @@ builder.defineMetaHandler(async ({ id }) => {
         poster: first.thumbnail,
         background: first.thumbnail,
         videos: episodes.map((ep, index) => ({
-          id: `${id}:${index + 1}`,
-          title: ep.title || `Episode ${index + 1}`,
-		  description: `Episode ${index + 1}`,
+          id: `${id}:${ep.episode}`,
+          title: ep.title || `Episode ${ep.episode}`,
+		  description: `Episode ${ep.episode}`,
           season: 1,
-          episode: index + 1,
+          episode: ep.episode,
           thumbnail: ep.thumbnail
         })),
       },
