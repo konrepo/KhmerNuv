@@ -149,8 +149,8 @@ async function getEpisodes(prefix, seriesUrl) {
       urls.push(match[1]);
     }
 
-    // Deduplicate
-    const uniqueUrls = [...new Set(urls)];
+    // Deduplicate + sort for stability
+    const uniqueUrls = [...new Set(urls)].sort();
     if (!uniqueUrls.length) return [];
 
     const $ = cheerio.load(data);	
@@ -161,18 +161,23 @@ async function getEpisodes(prefix, seriesUrl) {
 
     const normalizedPoster = normalizePoster(pagePoster || "");
 
-    return uniqueUrls.map((url, index) => ({
-      id: index + 1,
-      url,
-      title: `Episode ${index + 1}`,
-      season: 1,
-      episode: index + 1,
-      thumbnail: normalizedPoster,
-      released: new Date().toISOString(),
-      behaviorHints: {
-        group: `${prefix}:${encodeURIComponent(seriesUrl)}`
-      }
-    }));
+    return uniqueUrls.map((url, index) => {
+      const m = url.match(/-(\d+)/);
+      const epNum = m ? parseInt(m[1], 10) : index + 1;
+
+      return {
+        id: epNum,
+        url,
+        title: `Episode ${epNum}`,
+        season: 1,
+        episode: epNum,
+        thumbnail: normalizedPoster,
+        released: new Date().toISOString(),
+        behaviorHints: {
+          group: `${prefix}:${encodeURIComponent(seriesUrl)}`
+        }
+      };
+    });
   }
 
   if (!postId) {
@@ -187,25 +192,30 @@ async function getEpisodes(prefix, seriesUrl) {
   const maxEp = POST_INFO.get(postId)?.maxEp || null;
 
   // Deduplicate
-  let urls = [...new Set(detail.urls)];
+  let urls = [...new Set(detail.urls)].sort();
 
   // Apply max episode limit
   if (maxEp && urls.length > maxEp) {
     urls = urls.slice(0, maxEp);
   }
 
-  return urls.map((url, index) => ({
-    id: index + 1,
-    url,
-    title: detail.title,
-    season: 1,
-    episode: index + 1,
-    thumbnail: detail.thumbnail,
-    released: new Date().toISOString(),
-    behaviorHints: {
-      group: `${prefix}:${encodeURIComponent(seriesUrl)}`
-    }
-  }));
+  return urls.map((url, index) => {
+    const m = url.match(/-(\d+)/);
+    const epNum = m ? parseInt(m[1], 10) : index + 1;
+
+    return {
+      id: epNum,
+      url,
+      title: detail.title,
+      season: 1,
+      episode: epNum,
+      thumbnail: detail.thumbnail,
+      released: new Date().toISOString(),
+      behaviorHints: {
+        group: `${prefix}:${encodeURIComponent(seriesUrl)}`
+      }
+    };
+  });
 }
 
 /* =========================
