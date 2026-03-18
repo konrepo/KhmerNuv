@@ -343,8 +343,10 @@ builder.defineStreamHandler(async ({ id }) => {
       EP_CACHE.set(metaId, episodes);
     }
 
-    const ep = episodes[epNum - 1];
-    if (!ep) return { streams: [] };
+    let ep = episodes.find(e => e.episode === epNum);
+    if (!ep) {
+  	 ep = episodes[epNum - 1]; // fallback
+    }
 
     // Use episode URL directly
     const stream = await siteEngine.getStream(prefix, ep.url, epNum);
