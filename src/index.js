@@ -6,7 +6,7 @@ const khmerave = require("./sites/khmerave");
 const sites = require("./sites/config");
 
 const axiosClient = require("./utils/fetch");
-
+const cheerio = require("cheerio");
 const { normalizePoster, mapMetas, uniqById } = require("./utils/helpers");
 
 const { makeMetaId } = require("./utils/hash");
@@ -119,8 +119,8 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
       const base = String(site.baseUrl || "").replace(/\/$/, "");
 
       const startUrl = extra?.search
-        ? `${base}/search?q=${encodeURIComponent(extra.search)}&max-results=20`
-        : `${base}/?max-results=20`;
+        ? `${base}/search?q=${encodeURIComponent(extra.search)}&max-results=20&m=1`
+        : `${base}/?max-results=20&m=1`;
 
       const WEBSITE_PAGE_SIZE = 20;
       const PAGES_PER_BATCH = 3;
@@ -134,8 +134,9 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 
       const headers = {
         "User-Agent":
-          "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Mobile Safari/537.36",
+          "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36",
         Referer: `${base}/`,
+		Accept: "text/html"
       };
 
       while (currentPage < targetPage && url) {
