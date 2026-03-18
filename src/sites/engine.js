@@ -162,8 +162,7 @@ async function getEpisodes(prefix, seriesUrl) {
     const normalizedPoster = normalizePoster(pagePoster || "");
 
     return uniqueUrls.map((url, index) => {
-      const m = url.match(/-(\d+)/);
-      const epNum = m ? parseInt(m[1], 10) : index + 1;
+      const epNum = index + 1;
 
       return {
         id: epNum,
@@ -200,8 +199,7 @@ async function getEpisodes(prefix, seriesUrl) {
   }
 
   return urls.map((url, index) => {
-    const m = url.match(/-(\d+)/);
-    const epNum = m ? parseInt(m[1], 10) : index + 1;
+    const epNum = index + 1;
 
     return {
       id: epNum,
