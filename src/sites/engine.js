@@ -150,7 +150,7 @@ async function getEpisodes(prefix, seriesUrl) {
     }
 
     // Deduplicate + sort for stability
-    const uniqueUrls = [...new Set(urls)].sort();
+    const uniqueUrls = [...new Set(urls)];
     if (!uniqueUrls.length) return [];
 
     const $ = cheerio.load(data);	
@@ -192,7 +192,7 @@ async function getEpisodes(prefix, seriesUrl) {
   const maxEp = POST_INFO.get(postId)?.maxEp || null;
 
   // Deduplicate
-  let urls = [...new Set(detail.urls)].sort();
+  let urls = [...new Set(detail.urls)];
 
   // Apply max episode limit
   if (maxEp && urls.length > maxEp) {
