@@ -192,10 +192,14 @@ async function getEpisodes(prefix, seriesUrl) {
   const maxEp = POST_INFO.get(postId)?.maxEp || null;
 
   // Deduplicate
-  let urls = [...new Set(detail.urls)].sort();
-	
+  let urls;
+
   if (prefix === "vip" || prefix === "idrama") {
+    // Blogger → keep original order
     urls = [...new Set(detail.urls)];
+  } else {
+    // KhmerAve / others → need sorting
+    urls = [...new Set(detail.urls)].sort();
   }
 	
   // Apply max episode limit
