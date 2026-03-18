@@ -10,7 +10,7 @@ const cheerio = require("cheerio");
 const { normalizePoster, mapMetas, uniqById } = require("./utils/helpers");
 
 const { makeMetaId } = require("./utils/hash");
-const { URL_CACHE, EP_CACHE, CATALOG_CACHE, META_CACHE } = require("./utils/cache");
+const { URL_CACHE, EP_CACHE, CATALOG_CACHE } = require("./utils/cache");
 
 function applyMetaId(items, prefix) {
   return items.map(item => {
@@ -238,9 +238,6 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 ========================= */
 builder.defineMetaHandler(async ({ id }) => {
   try {
-	const cachedMeta = META_CACHE.get(id);
-	if (cachedMeta) return cachedMeta;
-  
     const prefix = id.split(":")[0];
 
     const ctx = getSiteEngine(prefix);
@@ -269,14 +266,14 @@ builder.defineMetaHandler(async ({ id }) => {
 
     const first = episodes[0];
 
-    const result = {
+    return {
       meta: {
         id,
         type: TYPE,
         name: (first.title || "KhmerDub").replace(/episode\s*\d+/i, "").trim(),
         poster: first.thumbnail,
         background: first.thumbnail,
-        videos: episodes.map((ep) => ({
+        videos: episodes.map((ep, index) => ({
           id: `${id}:${ep.episode}`,
           title: ep.title || `Episode ${ep.episode}`,
 		  description: `Episode ${ep.episode}`,
@@ -286,11 +283,9 @@ builder.defineMetaHandler(async ({ id }) => {
         })),
       },
     };
-	META_CACHE.set(id, result);
-	return result;
   } catch (err) {
-      console.error("meta error:", err);
-      return { meta: null };
+    console.error("meta error:", err);
+    return { meta: null };
   }
 });
 
@@ -343,13 +338,11 @@ builder.defineStreamHandler(async ({ id }) => {
       EP_CACHE.set(metaId, episodes);
     }
 
-    let ep = episodes.find(e => e.episode === epNum);
-    if (!ep) {
-  	 ep = episodes[epNum - 1]; // fallback
-    }
+    const ep = episodes[epNum - 1];
+    if (!ep) return { streams: [] };
 
     // Use episode URL directly
-    const stream = await siteEngine.getStream(prefix, ep.url, ep.episode);
+    const stream = await siteEngine.getStream(prefix, ep.url, epNum);
     if (!stream) return { streams: [] };
 
     return { streams: [stream] };
