@@ -205,7 +205,7 @@ async function getEpisodes(prefix, seriesUrl) {
 
   return urls.map((url, index) => {
     const m = url.match(/-(\d+)(?:\D|$)/);
-    const epNum = m ? parseInt(m[1], 10) : index + 1;
+    const parsed = m ? parseInt(m[1], 10) : null;
 	  
     const epNum =
       Number.isInteger(parsed) && parsed > 0 && parsed < 1000
