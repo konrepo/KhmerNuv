@@ -10,11 +10,11 @@ const sites = [
 ];
 
 module.exports = {
-  id: "community.khmer.test",
-  version: "1.3.0-test",
-  name: "KhmerDub Test",
-  description: "Stream Experimental Build | Dev: TheDevilz.",
-  logo: "https://raw.githubusercontent.com/konrepo/VIP/refs/heads/main/test.png",
+  id: "community.khmer.nuvio",
+  version: "1.0.0",
+  name: "KhmerDub",
+  description: "Stream Asian dramas dubbed in Khmer (Nuvio App) | Dev: TheDevilz.",
+  logo: "https://avatars.githubusercontent.com/u/32822347?v=4",
 
   resources: ["catalog", "meta", "stream"],
   types: [TYPE],
