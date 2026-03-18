@@ -192,17 +192,26 @@ async function getEpisodes(prefix, seriesUrl) {
   const maxEp = POST_INFO.get(postId)?.maxEp || null;
 
   // Deduplicate
-  let urls = [...new Set(detail.urls)];
-
+  let urls = [...new Set(detail.urls)].sort();
+	
+  if (prefix === "vip" || prefix === "idrama") {
+    urls = [...new Set(detail.urls)];
+  }
+	
   // Apply max episode limit
   if (maxEp && urls.length > maxEp) {
     urls = urls.slice(0, maxEp);
   }
 
   return urls.map((url, index) => {
-    const m = url.match(/-(\d+)/);
+    const m = url.match(/-(\d+)(?:\D|$)/);
     const epNum = m ? parseInt(m[1], 10) : index + 1;
-
+	  
+    const epNum =
+      Number.isInteger(parsed) && parsed > 0 && parsed < 1000
+        ? parsed
+        : index + 1;
+	  
     return {
       id: epNum,
       url,
