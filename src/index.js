@@ -6,10 +6,26 @@ const khmerave = require("./sites/khmerave");
 const sites = require("./sites/config");
 
 const axiosClient = require("./utils/fetch");
-const cheerio = require("cheerio");
+
 const { normalizePoster, mapMetas, uniqById } = require("./utils/helpers");
 
-const EP_CACHE = new Map();
+const { makeMetaId } = require("./utils/hash");
+const { URL_CACHE, EP_CACHE } = require("./utils/cache");
+
+function applyMetaId(items, prefix) {
+  return items.map(item => {
+    const url = item.id || item.url;
+    if (typeof url !== "string" || !url.trim()) return null;
+
+    const metaId = makeMetaId(prefix, url);
+    URL_CACHE.set(metaId, url);
+
+    return {
+      ...item,
+      id: metaId
+    };
+  }).filter(Boolean);
+}
 
 const TYPE = "series";
 
@@ -52,7 +68,9 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 
       const items = await siteEngine.getCatalogItems(id, site, url);
 
-      return { metas: mapMetas(items, TYPE) };
+      const fixed = applyMetaId(items, id);
+
+      return { metas: mapMetas(fixed, TYPE) };
     }
 
     // KhmerAve / Merlkon: paging
@@ -67,15 +85,6 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
         Math.floor(skip / SKIP_STEP) *
           PAGES_PER_BATCH +
         1;
-
-      console.log("CATALOG DEBUG:", {
-        id,
-        skip,
-        WEBSITE_PAGE_SIZE,
-        PAGES_PER_BATCH,
-        SKIP_STEP,
-        startPage
-      });
 
       const base = String(site.baseUrl || "").replace(/\/$/, "");
       const pages = [];
@@ -94,9 +103,11 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 
       const uniq = uniqById(allItems);
 
+      const fixed = applyMetaId(uniq, id);
+
       return {
         metas: mapMetas(
-          uniq.slice(0, WEBSITE_PAGE_SIZE * PAGES_PER_BATCH),
+          fixed.slice(0, WEBSITE_PAGE_SIZE * PAGES_PER_BATCH),
           TYPE
         ),
         cacheMaxAge: 3600
@@ -164,7 +175,7 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
             "";
 
           allItems.push({
-            id: `sunday:${encodeURIComponent(link)}`,
+            id: link,
             name: title,
             poster: normalizePoster(img),
           });
@@ -179,8 +190,9 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
       }
 
       const uniq = uniqById(allItems);
+      const fixed = applyMetaId(uniq, id);
 
-      return { metas: mapMetas(uniq, TYPE) };
+      return { metas: mapMetas(fixed, TYPE) };
     }
 
     // VIP / iDrama: normal paging
@@ -198,7 +210,9 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 
     const items = await siteEngine.getCatalogItems(id, site, url);
 
-    return { metas: mapMetas(items, TYPE) };
+    const fixed = applyMetaId(items, id);
+
+    return { metas: mapMetas(fixed, TYPE) };
 
   } catch (e) {
     console.error("catalog error:", e);
@@ -211,23 +225,28 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
 ========================= */
 builder.defineMetaHandler(async ({ id }) => {
   try {
-    const firstColon = id.indexOf(":");
-    if (firstColon === -1) return { meta: null };
-
-    const prefix = id.slice(0, firstColon);
-    const encodedUrl = id.slice(firstColon + 1);
+    const prefix = id.split(":")[0];
 
     const ctx = getSiteEngine(prefix);
     if (!ctx) return { meta: null };
 
     const { engine: siteEngine } = ctx;
-    const seriesUrl = decodeURIComponent(encodedUrl);
+
+    const seriesUrl = URL_CACHE.get(id);
+    if (!seriesUrl) return { meta: null };
 
     let episodes = await siteEngine.getEpisodes(prefix, seriesUrl);
     if (!episodes.length) return { meta: null };
 
     // normalize order
-    episodes = episodes.reverse();
+    if (
+      episodes.length > 1 && 
+	  Number.isFinite(episodes[0]?.episode) &&
+	  Number.isFinite(episodes[episodes.length - 1]?.episode) &&
+	  episodes[0].episode > episodes[episodes.length - 1].episode
+	){
+      episodes = episodes.reverse();
+    }
 
     // cache normalized episodes
     EP_CACHE.set(id, episodes);
@@ -238,7 +257,7 @@ builder.defineMetaHandler(async ({ id }) => {
       meta: {
         id,
         type: TYPE,
-        name: first.title.replace(/episode\s*\d+/i, "").trim(),
+        name: (first.title || "KhmerDub").replace(/episode\s*\d+/i, "").trim(),
         poster: first.thumbnail,
         background: first.thumbnail,
         videos: episodes.map((ep, index) => ({
@@ -273,18 +292,15 @@ builder.defineStreamHandler(async ({ id }) => {
       return { streams: [] };
     }
 
-    // Extract prefix + URL
-    const firstColon = metaId.indexOf(":");
-    if (firstColon === -1) return { streams: [] };
-
-    const prefix = metaId.slice(0, firstColon);
-    const encodedUrl = metaId.slice(firstColon + 1);
+    const prefix = metaId.split(":")[0];
 
     const ctx = getSiteEngine(prefix);
     if (!ctx) return { streams: [] };
 
     const { engine: siteEngine } = ctx;
-    const seriesUrl = decodeURIComponent(encodedUrl);
+
+    const seriesUrl = URL_CACHE.get(metaId);
+    if (!seriesUrl) return { streams: [] };
 
     // =========================
     // USE CACHE FIRST
@@ -296,9 +312,14 @@ builder.defineStreamHandler(async ({ id }) => {
       if (!episodes.length) return { streams: [] };
 
       // normalize
-      if (episodes.length > 1 && episodes[0].episode > episodes[episodes.length - 1].episode) {
-		episodes = episodes.reverse();
-	  }
+      if (
+        episodes.length > 1 && 
+        Number.isFinite(episodes[0]?.episode) &&
+        Number.isFinite(episodes[episodes.length - 1]?.episode) &&
+        episodes[0].episode > episodes[episodes.length - 1].episode
+      ){
+        episodes = episodes.reverse();
+      }
 
       EP_CACHE.set(metaId, episodes);
     }
