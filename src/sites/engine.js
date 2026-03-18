@@ -192,16 +192,7 @@ async function getEpisodes(prefix, seriesUrl) {
   const maxEp = POST_INFO.get(postId)?.maxEp || null;
 
   // Deduplicate
-  let urls = [...new Set(detail.urls)];
-
-  urls.sort((a, b) => {
-    const getNum = (u) => {
-	  const m = u.match(/-(\d+)/);
-	  return m ? parseInt(m[1], 10) : 0;
-    };
-
-    return getNum(a) - getNum(b);
-  });
+  let urls = [...new Set(detail.urls)].sort();
 
   // Apply max episode limit
   if (maxEp && urls.length > maxEp) {
