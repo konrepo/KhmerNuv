@@ -136,6 +136,11 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
       // how many pages to skip
       const steps = Math.floor(skip / SKIP_STEP);
 
+      console.log("SUNDAY DEBUG:", {
+        skip,
+        steps
+      });
+
       const headers = {
         "User-Agent":
           "Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 Chrome/120 Mobile Safari/537.36",
@@ -217,6 +222,15 @@ builder.defineCatalogHandler(async ({ id, extra }) => {
         PAGES_PER_BATCH +
       1;
 
+    console.log("CATALOG DEBUG:", {
+      id,
+      skip,
+      WEBSITE_PAGE_SIZE,
+      PAGES_PER_BATCH,
+      SKIP_STEP,
+      startPage
+    });
+
     const base = String(site.baseUrl || "").replace(/\/$/, "");
     const pages = [];
 
@@ -295,7 +309,12 @@ builder.defineMetaHandler(async ({ id }) => {
       meta: {
         id,
         type: TYPE,
-        name: (first.title || "KhmerDub").replace(/episode\s*\d+/i, "").trim(),
+        name: (first.title || "KhmerDub")
+          .replace(/\[.*?\]/g, "")
+          .replace(/-\s*$/, "")
+		  .trim(),
+        description: (first.title || "KhmerDub")
+          .replace(/\[.*?\]/g, ""),		  
         poster: first.thumbnail,
         background: first.thumbnail,
         videos: episodes.map((ep, index) => ({
