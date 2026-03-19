@@ -11,7 +11,7 @@ const sites = [
 
 module.exports = {
   id: "community.khmer.nuvio",
-  version: "1.0.0",
+  version: "2.0.0",
   name: "KhmerDub",
   description: "Stream Asian dramas dubbed in Khmer (Nuvio App) | Dev: TheDevilz.",
   logo: "https://avatars.githubusercontent.com/u/32822347?v=4",
