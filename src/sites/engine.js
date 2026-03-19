@@ -136,7 +136,7 @@ async function getStreamDetail(postId) {
 async function getEpisodes(prefix, seriesUrl) {
   const postId = await getPostId(seriesUrl);
 
-  // Sunday playlist
+  // SundayDrama playlist
   if (!postId && prefix === "sunday") {  
     const { data } = await axiosClient.get(seriesUrl);
 
@@ -195,7 +195,7 @@ async function getEpisodes(prefix, seriesUrl) {
   let urls;
 
   if (prefix === "vip" || prefix === "idrama") {
-    // Blogger → keep original order
+    // Blogger - keep original order
     urls = [...new Set(detail.urls)];
   } else {
     // KhmerAve / others → need sorting
@@ -279,26 +279,37 @@ async function resolveOkEmbed(embedUrl) {
     .replace(/\\&quot;.*/g, ""); 
 }
 
-
 function buildStream(url, episode) {
   const isOk = /ok\.ru|okcdn\.ru/i.test(url);
+  const isM3U8 = url.includes(".m3u8");
+
+  let headers = null;
+
+  if (isOk) {
+    headers = {
+      Referer: "https://ok.ru/",
+      Origin: "https://ok.ru"
+    };
+  } else if (url.includes("sooplive.co.kr")) {
+    headers = {
+      Referer: "https://www.sundaydrama.com/",
+      Origin: "https://www.sundaydrama.com"
+    };
+  }
 
   return {
     url,
     name: "KhmerDub",
     title: `Episode ${episode}`,
-    type: url.includes(".m3u8") ? "hls" : undefined,
-    behaviorHints: isOk
-      ? {
-          group: "khmerdub",
-          proxyHeaders: {
-            request: {
-              Referer: "https://ok.ru/",
-              Origin: "https://ok.ru"
-            }
-          }
+    type: isM3U8 ? "hls" : undefined,
+    behaviorHints: {
+      group: "khmerdub",
+      ...(headers && {
+        proxyHeaders: {
+          request: headers
         }
-      : { group: "khmerdub" }
+      })
+    }
   };
 }
 
@@ -306,23 +317,14 @@ function buildStream(url, episode) {
    STREAM
 ========================= */
 async function getStream(prefix, episodeUrl, episode) {
-  // Sunday fallback
+
+  // Sunday URL
   if (prefix === "sunday") {
-    const { data } = await axiosClient.get(episodeUrl, {
-      headers: {
-        "User-Agent": "Mozilla/5.0",
-        Referer: episodeUrl
-      }
-    });
-
-    const links = extractVideoLinks(data);
-    const url = links[episode - 1];
-    if (!url) return null;
-
-    return buildStream(url, episode);
+    const stream = buildStream(episodeUrl, episode);
+    return stream;
   }
 
-  // For VIP / iDrama: episodeUrl 
+  // Other sites
   let url = episodeUrl;
 
   // Resolve player.php
@@ -339,7 +341,8 @@ async function getStream(prefix, episodeUrl, episode) {
     url = resolved;
   }
 
-  return buildStream(url, episode);
+  const stream = buildStream(url, episode);
+  return stream;
 }
 
 /* =========================
