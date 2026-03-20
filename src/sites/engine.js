@@ -43,6 +43,12 @@ async function getPostId(url) {
   // Extract max EP from title OR from SundayDrama "episode/END.xx"
   const pageTitle = $("title").text();
   let maxEp = extractMaxEpFromTitle(pageTitle);
+  
+  console.log("TITLE DEBUG:", {
+    url,
+    pageTitle,
+    maxEp
+  });
 
   // SundayDrama often has: <b>episode/END.70</b>
   if (!maxEp) {
@@ -194,6 +200,12 @@ async function getEpisodes(prefix, seriesUrl) {
   // =========================
   let maxEp = POST_INFO.get(postId)?.maxEp || null;
 
+  console.log("MAX EP DEBUG:", {
+    postId,
+    stored: POST_INFO.get(postId),
+    maxEp
+  });
+
   // fallback from title
   if (!maxEp && detail?.title) {
     const extracted = extractMaxEpFromTitle(detail.title);
@@ -256,6 +268,9 @@ async function getEpisodes(prefix, seriesUrl) {
       ep: index + 1
     }));
   }
+
+  console.log("FINAL MAX EP:", maxEp);
+  console.log("FINAL EP COUNT:", episodes.length);
 
   return episodes.map(({ url, ep }) => ({
     id: ep,
@@ -339,7 +354,7 @@ function buildStream(url, episode) {
 
   return {
     url,
-    name: "KhmerDub",
+    // name: "KhmerDub",
     title: `Episode ${episode}`,
     type: isM3U8 ? "hls" : undefined,
     behaviorHints: {

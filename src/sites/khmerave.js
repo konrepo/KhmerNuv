@@ -69,7 +69,12 @@ async function getCatalogItems(prefix, siteConfig, url) {
 async function getEpisodes(prefix, seriesUrl) {
   try {
     const { data } = await axios.get(seriesUrl, {
-      headers: { "User-Agent": UA_MOB, Referer: referer(prefix) },
+      headers: { 
+	    "User-Agent": prefix === "khmerave" ? UA_WIN : UA_MOB,
+		Referer: referer(prefix),
+		"Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+		"Accept-Language": "en-US,en;q=0.9"
+      },
       timeout: 15000,
     });
 
@@ -77,6 +82,7 @@ async function getEpisodes(prefix, seriesUrl) {
 
     const pageTitle = $("h1").first().text().trim() || seriesUrl;
 
+    // poster
     let poster = "";
     const imgDiv = $(".album-content-image");
     if (imgDiv.length) {
@@ -85,31 +91,54 @@ async function getEpisodes(prefix, seriesUrl) {
 
     let eps = [];
 
-    $("table#latest-videos a[href], div.col-xs-6.col-sm-6.col-md-3 a[href]").each(
-      (_, el) => {
-        const link = $(el).attr("href");
-        if (!link) return;
-        if (link.includes("?post_type=videos")) return;
+    // =========================
+    // EPISODE EXTRACTION
+    // =========================
+    $("a[href]").each((_, el) => {
+      let link = $(el).attr("href");
+      if (!link) return;
 
-        // Extract episode number
-        const m = link.match(/-(\d+)/);
-        const epNumber = m ? parseInt(m[1], 10) : 1;
+      const cleanLink = link.replace(/\/$/, "");
+      const cleanSeries = seriesUrl.replace(/\/$/, "");
 
-        eps.push({ link, epNumber });
+      // ONLY allow valid episode links
+      if (!cleanLink.includes("/videos/") && cleanLink !== cleanSeries) return;
+
+      if (link.includes("?post_type=videos")) return;
+
+      let epNumber = null;
+
+      // normal episodes
+      const m = link.match(/-(\d+)(?:\/|$)/);
+      if (m) {
+        epNumber = parseInt(m[1], 10);
       }
-    );
+
+      // fallback for episode 1
+      if (!epNumber && cleanLink === cleanSeries) {
+        epNumber = 1;
+      }
+
+      if (!epNumber) return;
+
+      eps.push({ link, epNumber });
+    });
 
     if (!eps.length) return [];
 
-    // remove duplicates
-    eps = [...new Map(eps.map((e) => [e.link, e])).values()];
+    // =========================
+    // REMOVE DUPLICATES
+    // =========================
+    eps = [...new Map(eps.map((e) => [e.epNumber, e])).values()];
 
-    // sort properly
+    // =========================
+    // SORT PROPERLY
+    // =========================
     eps.sort((a, b) => a.epNumber - b.epNumber);
 
     return eps.map((e) => ({
       id: e.epNumber,
-      url: e.link, 
+      url: e.link,
       title: pageTitle,
       season: 1,
       episode: e.epNumber,
@@ -119,6 +148,7 @@ async function getEpisodes(prefix, seriesUrl) {
         group: `${prefix}:${encodeURIComponent(seriesUrl)}`,
       },
     }));
+
   } catch (err) {
     console.error("khmerave meta error:", err.message);
     return [];
@@ -215,7 +245,10 @@ async function resolveOkRuToDirect(iframeUrl, ua) {
 async function getStream(prefix, episodeUrl, episode) {
   try {
     const epRes = await axios.get(episodeUrl, {
-      headers: { "User-Agent": UA_MOB, Referer: referer(prefix) },
+      headers: { 
+	    "User-Agent": prefix === "khmerave" ? UA_WIN : UA_MOB,
+	    Referer: referer(prefix),
+	  },
       timeout: 15000,
     });
 
